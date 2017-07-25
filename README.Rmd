@@ -187,7 +187,7 @@ game_dist %>%
     geom_bar(stat = "identity") +
     scale_x_continuous(trans = "log",
                        breaks = lab) +
-    facet_grid(players_text ~ allfinish) +
+    facet_grid(allfinish ~ players_text) +
     ggtitle("Histograms of turns per game (log scale)")
 
 ```

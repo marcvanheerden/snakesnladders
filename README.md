@@ -164,12 +164,12 @@ game_summary
     ## # A tibble: 6 x 6
     ##         allfinish players     mean median       sd percentile95
     ##             <chr>   <int>    <dbl>  <dbl>    <dbl>        <dbl>
-    ## 1      All finish       2  55.3544     51 24.79333          105
-    ## 2      All finish       3  83.2107     78 31.08375          142
-    ## 3      All finish       4 111.1637    107 35.21247          176
-    ## 4 First to finish       2  36.8452     34 19.73684           74
-    ## 5 First to finish       3  45.5433     42 21.95013           87
-    ## 6 First to finish       4  53.1796     48 24.01684           96
+    ## 1      All finish       2  55.4326     51 24.84627          104
+    ## 2      All finish       3  83.5271     78 30.99956          142
+    ## 3      All finish       4 111.4303    107 35.06857          175
+    ## 4 First to finish       2  36.9638     34 19.88696           74
+    ## 5 First to finish       3  45.4566     42 21.95004           87
+    ## 6 First to finish       4  52.6376     48 23.55061           96
 
 ``` r
 game_summary %>%
@@ -207,7 +207,7 @@ game_dist %>%
     geom_bar(stat = "identity") +
     scale_x_continuous(trans = "log",
                        breaks = lab) +
-    facet_grid(players_text ~ allfinish) +
+    facet_grid(allfinish ~ players_text) +
     ggtitle("Histograms of turns per game (log scale)")
 ```
 

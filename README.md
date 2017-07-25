@@ -136,7 +136,7 @@ game_data <-
     group_by(sim) %>%
     mutate(turns = multiPlayer(dieOutcomes, board1$snakeladder, maxPosition, maxMoves, players, allfinish)) %>% 
     ungroup %>%
-    mutate(turns_rounded = round(turns/10,0)*10,
+    mutate(turns_log_rounded = exp(round(log(turns)*4,0)/4),
            allfinish = ifelse(allfinish, "All finish", "First to finish"),
            players_text = paste(players, " players"))
 ```
@@ -164,18 +164,19 @@ game_summary
     ## # A tibble: 6 x 6
     ##         allfinish players     mean median       sd percentile95
     ##             <chr>   <int>    <dbl>  <dbl>    <dbl>        <dbl>
-    ## 1      All finish       2  55.4026     51 24.70081          103
-    ## 2      All finish       3  83.8603     79 30.64090          142
-    ## 3      All finish       4 111.3003    106 35.63093          178
-    ## 4 First to finish       2  37.0884     34 19.79109           74
-    ## 5 First to finish       3  45.1662     42 21.62464           87
-    ## 6 First to finish       4  52.9324     48 23.67428           96
+    ## 1      All finish       2  55.3544     51 24.79333          105
+    ## 2      All finish       3  83.2107     78 31.08375          142
+    ## 3      All finish       4 111.1637    107 35.21247          176
+    ## 4 First to finish       2  36.8452     34 19.73684           74
+    ## 5 First to finish       3  45.5433     42 21.95013           87
+    ## 6 First to finish       4  53.1796     48 24.01684           96
 
 ``` r
 game_summary %>%
     ggplot(aes(players, median)) +
     geom_bar(stat = "identity") +
-    facet_grid(. ~ allfinish)
+    facet_grid(. ~ allfinish) +
+    ggtitle("Median turns per game")
 ```
 
 ![](README_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-4-1.png)
@@ -184,7 +185,8 @@ game_summary %>%
 game_summary %>%
     ggplot(aes(players, percentile95)) +
     geom_bar(stat = "identity") +
-    facet_grid(. ~ allfinish)
+    facet_grid(. ~ allfinish) +
+    ggtitle("95th percentile of turns per game")
 ```
 
 ![](README_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-4-2.png)
@@ -192,14 +194,21 @@ game_summary %>%
 ``` r
 game_dist <- 
     game_data %>%
-    group_by(players_text, allfinish, turns_rounded) %>%
+    group_by(players_text, allfinish, turns_log_rounded) %>%
     summarise(count = n()) %>%
     ungroup
+
+logrng <- log(range(game_dist$turns_log_rounded))
+loglab <- log(min(game_dist$turns_log_rounded)) + (0:8)*(logrng[2] - logrng[1])/8
+lab <- round(exp(loglab),0)
     
 game_dist %>%
-    ggplot(aes(turns_rounded, count)) +
+    ggplot(aes(turns_log_rounded, count)) +
     geom_bar(stat = "identity") +
-    facet_grid(players_text ~ allfinish)
+    scale_x_continuous(trans = "log",
+                       breaks = lab) +
+    facet_grid(players_text ~ allfinish) +
+    ggtitle("Histograms of turns per game (log scale)")
 ```
 
 ![](README_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-4-3.png)

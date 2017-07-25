@@ -134,7 +134,7 @@ game_data <-
     group_by(sim) %>%
     mutate(turns = multiPlayer(dieOutcomes, board1$snakeladder, maxPosition, maxMoves, players, allfinish)) %>% 
     ungroup %>%
-    mutate(turns_rounded = round(turns/10,0)*10,
+    mutate(turns_log_rounded = exp(round(log(turns)*4,0)/4),
            allfinish = ifelse(allfinish, "All finish", "First to finish"),
            players_text = paste(players, " players"))
 
@@ -163,23 +163,32 @@ game_summary
 game_summary %>%
     ggplot(aes(players, median)) +
     geom_bar(stat = "identity") +
-    facet_grid(. ~ allfinish)
+    facet_grid(. ~ allfinish) +
+    ggtitle("Median turns per game")
 
 game_summary %>%
     ggplot(aes(players, percentile95)) +
     geom_bar(stat = "identity") +
-    facet_grid(. ~ allfinish)
+    facet_grid(. ~ allfinish) +
+    ggtitle("95th percentile of turns per game")
 
 game_dist <- 
     game_data %>%
-    group_by(players_text, allfinish, turns_rounded) %>%
+    group_by(players_text, allfinish, turns_log_rounded) %>%
     summarise(count = n()) %>%
     ungroup
+
+logrng <- log(range(game_dist$turns_log_rounded))
+loglab <- log(min(game_dist$turns_log_rounded)) + (0:8)*(logrng[2] - logrng[1])/8
+lab <- round(exp(loglab),0)
     
 game_dist %>%
-    ggplot(aes(turns_rounded, count)) +
+    ggplot(aes(turns_log_rounded, count)) +
     geom_bar(stat = "identity") +
-    facet_grid(players_text ~ allfinish)
+    scale_x_continuous(trans = "log",
+                       breaks = lab) +
+    facet_grid(players_text ~ allfinish) +
+    ggtitle("Histograms of turns per game (log scale)")
 
 ```
 

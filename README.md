@@ -1,36 +1,39 @@
----
-title: "Snakes and Ladders"
-author: "Marc van Heerden"
-date: "July 24, 2017"
-output: github_document
----
+Snakes and Ladders
+================
+Marc van Heerden
+July 24, 2017
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+Background
+----------
 
-## Background
-
-I was playing the board game Snakes and Ladders with my kids with their bedtime quickly approaching. I wondered to myself what the distribution of playing time is for the game, measured in turns. 
+I was playing the board game Snakes and Ladders with my kids with their bedtime quickly approaching. I wondered to myself what the distribution of playing time is for the game, measured in turns.
 
 My kids like to play until every player is finished and I wondered how this would affect the distribution.
 
 I had been wanting to try out Rcpp for a while so I decided this would be a fun, small project with lots of loops to try it out.
 
-## Simulation
+Simulation
+----------
 
-The board we were playing on was a 100 tile board, I decided to represent the snakes and ladders as follows. Since the vector is going to be used in Rcpp, the indexing is understood to start at 0 and the value represents the tile to move to when landing on the tile number of the index. 
+The board we were playing on was a 100 tile board, I decided to represent the snakes and ladders as follows. Since the vector is going to be used in Rcpp, the indexing is understood to start at 0 and the value represents the tile to move to when landing on the tile number of the index.
 
-```{r}
+``` r
 board1 <- read.csv("board1.csv", stringsAsFactors = FALSE, header = FALSE)
 names(board1) <- "snakeladder"
 head(board1)
 ```
 
+    ##   snakeladder
+    ## 1           0
+    ## 2          38
+    ## 3           2
+    ## 4           3
+    ## 5          14
+    ## 6           5
 
 I wrote up the functions below to simulate a multiplayer game, I suspect that my use of vectors instead of scalars is sub-optimal but being my first time I decided this was sufficient.
 
-```{r engine='Rcpp', eval = FALSE}
+``` cpp
 #include <RcppArmadilloExtensions/sample.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 
@@ -109,12 +112,11 @@ NumericVector multiPlayer(NumericVector dieOutcomes,
     
     return turns;
 }
-
 ```
 
 Then the function is used with dplyr in R to simulate games for various numbers of players under the all-must-finish and first-to-finish rules
 
-```{r}
+``` r
 suppressPackageStartupMessages({
     library(Rcpp)
     library(RcppArmadillo)
@@ -137,16 +139,14 @@ game_data <-
     mutate(turns_rounded = round(turns/10,0)*10,
            allfinish = ifelse(allfinish, "All finish", "First to finish"),
            players_text = paste(players, " players"))
-
 ```
 
+Analysis
+--------
 
-## Analysis
+Some summary statistics are tabulated and the histograms of turns per game are plotted for the various player/rule configurations
 
-Some summary statistics are tabulated and the histograms of turns per game are plotted for the various player/rule configurations 
-
-```{r}
-
+``` r
 game_summary <- 
     game_data %>%
     group_by(players, allfinish) %>%
@@ -159,17 +159,37 @@ game_summary <-
     ungroup
 
 game_summary
+```
 
+    ## # A tibble: 6 x 6
+    ##         allfinish players     mean median       sd percentile95
+    ##             <chr>   <int>    <dbl>  <dbl>    <dbl>        <dbl>
+    ## 1      All finish       2  55.4026     51 24.70081          103
+    ## 2      All finish       3  83.8603     79 30.64090          142
+    ## 3      All finish       4 111.3003    106 35.63093          178
+    ## 4 First to finish       2  37.0884     34 19.79109           74
+    ## 5 First to finish       3  45.1662     42 21.62464           87
+    ## 6 First to finish       4  52.9324     48 23.67428           96
+
+``` r
 game_summary %>%
     ggplot(aes(players, median)) +
     geom_bar(stat = "identity") +
     facet_grid(. ~ allfinish)
+```
 
+![](README_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-4-1.png)
+
+``` r
 game_summary %>%
     ggplot(aes(players, percentile95)) +
     geom_bar(stat = "identity") +
     facet_grid(. ~ allfinish)
+```
 
+![](README_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-4-2.png)
+
+``` r
 game_dist <- 
     game_data %>%
     group_by(players_text, allfinish, turns_rounded) %>%
@@ -180,21 +200,21 @@ game_dist %>%
     ggplot(aes(turns_rounded, count)) +
     geom_bar(stat = "identity") +
     facet_grid(players_text ~ allfinish)
-
 ```
 
-## Observations
+![](README_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-4-3.png)
 
-Under the first-to-finish rule there is a much slower increase in the median and 95th percentile turns per game. This is due to the fact that while more players take more turns, the chance of having an early winner increases with more players. 
+Observations
+------------
+
+Under the first-to-finish rule there is a much slower increase in the median and 95th percentile turns per game. This is due to the fact that while more players take more turns, the chance of having an early winner increases with more players.
 
 If I play snakes and ladders with my wife and two kids I can expect the duration of the game to roughly double if we play until all players are finished.
 
-## Possible next steps
+Possible next steps
+-------------------
 
-- Randomly generate snakes and ladders boards and then investigate the drivers of location and spread of the turns distribution, including placement and length of snakes and ladders. 
-- Investigate the effect of using a die with more than six sides or a biased die.
-- Build various models to predict duration based on board setup, investigate whether neural networks or gradient boosting is a better suited model.
-- Visualise the Snakes and Ladders board with ggplot2 
-
-
-
+-   Randomly generate snakes and ladders boards and then investigate the drivers of location and spread of the turns distribution, including placement and length of snakes and ladders.
+-   Investigate the effect of using a die with more than six sides or a biased die.
+-   Build various models to predict duration based on board setup, investigate whether neural networks or gradient boosting is a better suited model.
+-   Visualise the Snakes and Ladders board with ggplot2
